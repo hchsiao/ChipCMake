@@ -6,7 +6,7 @@ set(__ChipCMake_INCLUDED TRUE)
 include(CMakeParseArguments)
 
 define_property(GLOBAL
-  PROPERTY DESIGN_LIST
+  PROPERTY IP_LIST
   BRIEF_DOCS tmp
   FULL_DOCS tmpS
   )
@@ -30,7 +30,7 @@ define_property(GLOBAL
   BRIEF_DOCS tmp
   FULL_DOCS tmpS
   )
-set_property(GLOBAL PROPERTY DESIGN_LIST "")
+set_property(GLOBAL PROPERTY IP_LIST "")
 set_property(GLOBAL PROPERTY TESTBENCH_LIST "")
 set_property(GLOBAL PROPERTY SYNTHESIS_LIST "BAZ")
 set_property(GLOBAL PROPERTY IMPLEMENT_LIST "FOO;BAR")
@@ -72,23 +72,33 @@ function(add_ip _IP_NAME)
   add_subdirectory(${${_IP_NAME}_DIR})
 endfunction()
 
-function(add_design _TARGET_NAME)
-  get_property(design_list GLOBAL PROPERTY DESIGN_LIST)
-  list(FIND design_list ${_TARGET_NAME} _index)
-  if(${_index} GREATER -1)
-    message(FATAL_ERROR "Design ${_TARGET_NAME} already exist")
-  endif()
-
-  list(APPEND design_list ${_TARGET_NAME})
-  set_property(GLOBAL PROPERTY DESIGN_LIST ${design_list})
-
+function(specify_design)
   set(options NO_SYNTH)
   set(oneValueArgs "")
   set(multiValueArgs SOURCES)
   cmake_parse_arguments(parser "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
-  set_property(GLOBAL PROPERTY ${_TARGET_NAME}_DESIGN_SOURCES "${parser_SOURCES}")
-  set_property(GLOBAL PROPERTY ${_TARGET_NAME}_DESIGN_NO_SYNTH ${parser_NO_SYNTH})
+  if(${PROJECT_NAME} STREQUAL ${CMAKE_PROJECT_NAME})
+    # Specifying the design as top design
+    set_property(GLOBAL PROPERTY DESIGN_SOURCES "${parser_SOURCES}")
+    set_property(GLOBAL PROPERTY DESIGN_NO_SYNTH ${parser_NO_SYNTH})
+  else()
+    # Specifying the design as IP
+    set(IP_NAME ${PROJECT_NAME})
+
+    get_property(ip_list GLOBAL PROPERTY IP_LIST)
+    list(FIND ip_list ${IP_NAME} _index)
+    if(${_index} GREATER -1)
+      message(FATAL_ERROR "IP ${IP_NAME} already exist")
+    endif()
+
+    list(APPEND ip_list ${IP_NAME})
+    set_property(GLOBAL PROPERTY IP_LIST ${ip_list})
+
+    set_property(GLOBAL PROPERTY ${IP_NAME}_IP_SOURCES "${parser_SOURCES}")
+    set_property(GLOBAL PROPERTY ${IP_NAME}_IP_NO_SYNTH ${parser_NO_SYNTH})
+
+  endif()
 endfunction()
 
 function(add_testbench _TARGET_NAME)
@@ -101,17 +111,22 @@ function(add_testbench _TARGET_NAME)
     return()
   endif()
 
+  get_property(design_is_set GLOBAL PROPERTY DESIGN_SOURCES SET)
+  if(NOT design_is_set)
+    message(FATAL_ERROR "Please specify_design() before adding testbench")
+  endif()
+
   get_property(testbench_list GLOBAL PROPERTY TESTBENCH_LIST)
   list(APPEND testbench_list ${_TARGET_NAME})
   set_property(GLOBAL PROPERTY TESTBENCH_LIST ${testbench_list})
 
   set(options "")
-  set(oneValueArgs DESIGN)
-  set(multiValueArgs FLAGS)
+  set(oneValueArgs "")
+  set(multiValueArgs FLAGS IP_LIST)
   cmake_parse_arguments(parser "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
   set(test_sources "${parser_UNPARSED_ARGUMENTS}")
 
-  set_property(GLOBAL PROPERTY ${_TARGET_NAME}_TESTBENCH_DESIGN "${parser_DESIGN}")
+  set_property(GLOBAL PROPERTY ${_TARGET_NAME}_TESTBENCH_IP_LIST "${parser_IP_LIST}")
   set_property(GLOBAL PROPERTY ${_TARGET_NAME}_TESTBENCH_FLAGS "${parser_FLAGS}")
   set_property(GLOBAL PROPERTY ${_TARGET_NAME}_TESTBENCH_SOURCES "${test_sources}")
 
