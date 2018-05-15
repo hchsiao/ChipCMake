@@ -1,7 +1,7 @@
 # This file includes simulator dependent scripts only
 
 set(VCS_FLAG_LIST "+vcs+fsdbon"
-                  "-gui"
+                  #"-gui"
                   "-kdb"
                   "-lca"
                   "+memcbk"
@@ -10,8 +10,8 @@ set(VCS_FLAG_LIST "+vcs+fsdbon"
                   "+systemverilogext+.sv+.svh"
                   "-override_timescale=1ns/1ps"
                   )
-set(VCS_SIM_FLAG_LIST "-verdi"
-                  )
+set(VCS_SIM_FLAG_LIST "")
+#set(VCS_SIM_FLAG_LIST "-verdi")
 set(VCS_EXECUTABLE vcs)
 
 function(RTL_SIMULATOR_CB_add_testbench _TARGET_NAME)
