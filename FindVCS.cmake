@@ -5,6 +5,7 @@ set(VCS_FLAG_LIST "+vcs+fsdbon"
                   "-kdb"
                   "-lca"
                   "+memcbk"
+                  "+nospecify" # TODO: consider post-synth simulation
                   "+vcs+fsdbon+struct"
                   "-full64"
                   "+systemverilogext+.sv+.svh"
@@ -15,7 +16,7 @@ set(VCS_SIM_FLAG_LIST "")
 set(VCS_EXECUTABLE vcs)
 
 function(RTL_SIMULATOR_CB_add_testbench _TARGET_NAME)
-  get_directory_property(include_dirs INCLUDE_DIRECTORIES)
+  get_property(include_dirs GLOBAL PROPERTY HDL_INCLUDE_DIRECTORIES)
   set(inc_flags "")
   foreach(inc ${include_dirs})
     list(APPEND inc_flags +incdir+${inc})
@@ -40,7 +41,7 @@ function(RTL_SIMULATOR_CB_add_testbench _TARGET_NAME)
     "${VCS_FLAG_LIST};${sim_flags};${inc_flags};${sim_sources}")
 
   add_custom_command(OUTPUT ${VCS_SIMULATOR}
-    DEPENDS ${design_sources} ${test_sources}
+    DEPENDS ${sim_sources}
     COMMAND ${VCS_EXECUTABLE} ${VCS_COMPILE_FLAG} -o ${VCS_SIMULATOR}
     COMMENT "VCS compile design"
   )
@@ -54,7 +55,7 @@ function(RTL_SIMULATOR_CB_add_testbench _TARGET_NAME)
     COMMENT "VCS simulate design"
   )
 
-  add_dependencies(${_TARGET_NAME} ${_TARGET_NAME})
+  add_dependencies(${_TARGET_NAME} c2mk_pre_simulation)
 
 endfunction()
 
