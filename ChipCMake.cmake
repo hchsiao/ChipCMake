@@ -152,6 +152,7 @@ function(add_testbench _TARGET_NAME)
   set(test_sources "${parser_UNPARSED_ARGUMENTS}")
   # TODO: add a check to make sure ${test_source} contains files only,
   #       otherwise cmake reports confusing error message
+  # TODO: convert relative path to absolute
 
   set_property(GLOBAL PROPERTY ${_TARGET_NAME}_TESTBENCH_IP_LIST "${parser_IP_LIST}")
   set_property(GLOBAL PROPERTY ${_TARGET_NAME}_TESTBENCH_FLAGS "${parser_FLAGS}")
