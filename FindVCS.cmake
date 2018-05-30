@@ -1,18 +1,20 @@
 # This file includes simulator dependent scripts only
 
-set(VCS_FLAG_LIST "+vcs+fsdbon"
-                  #"-gui"
-                  "-kdb"
-                  "-lca"
-                  "+memcbk"
-                  "+nospecify" # TODO: consider post-synth simulation
-                  "+vcs+fsdbon+struct"
-                  "-full64"
-                  "+systemverilogext+.sv+.svh"
-                  "-override_timescale=1ns/1ps"
-                  )
-set(VCS_SIM_FLAG_LIST "")
-#set(VCS_SIM_FLAG_LIST "-verdi")
+set(VCS_COMPILE_FLAGS
+  "+vcs+fsdbon"
+  #"-gui"
+  "-kdb"
+  "-lca"
+  "+memcbk"
+  "+nospecify" # TODO: consider post-synth simulation
+  "+vcs+fsdbon+all"
+  "-full64"
+  "+systemverilogext+.sv+.svh"
+  "-override_timescale=1ns/1ps"
+  )
+set(VCS_SIM_FLAGS
+  #"-verdi"
+  )
 set(VCS_EXECUTABLE vcs)
 
 function(RTL_SIMULATOR_CB_add_testbench _TARGET_NAME)
@@ -38,20 +40,22 @@ function(RTL_SIMULATOR_CB_add_testbench _TARGET_NAME)
 
   set(VCS_SIMULATOR vcs_simulator_${_TARGET_NAME})
   string(REPLACE ";" " " VCS_COMPILE_FLAG
-    "${VCS_FLAG_LIST};${sim_flags};${inc_flags};${sim_sources}")
+    "${VCS_COMPILE_FLAGS};${sim_flags};${inc_flags};${sim_sources}")
 
   add_custom_command(OUTPUT ${VCS_SIMULATOR}
     DEPENDS ${sim_sources}
-    COMMAND ${VCS_EXECUTABLE} ${VCS_COMPILE_FLAG} -o ${VCS_SIMULATOR}
+    # "bash -c" prevents escaped space (i.e. "\ ") disturbing vcs argument parser
+    COMMAND bash -c "${VCS_EXECUTABLE} ${VCS_COMPILE_FLAG} -o ${VCS_SIMULATOR}"
     COMMENT "VCS compile design"
+    VERBATIM
   )
 
-  string(REPLACE ";" " " VCS_SIMULATE_FLAG
-    "${VCS_SIM_FLAG_LIST}")
+string(REPLACE ";" " " VCS_SIM_FLAGS
+    "${VCS_SIM_FLAGS}")
 
   add_custom_target(${_TARGET_NAME}
     DEPENDS ${VCS_SIMULATOR}
-    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/${VCS_SIMULATOR} ${VCS_SIMULATE_FLAG}
+    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/${VCS_SIMULATOR} ${VCS_SIM_FLAGS}
     COMMENT "VCS simulate design"
   )
 
