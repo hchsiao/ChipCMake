@@ -167,20 +167,15 @@ endfunction()
 
 # The purpose of seperating config.cmake file is to not defaulting every parameters
 function(configure_parameters)
-  # TODO: check for '\n', which is not allowed
-  set(options "")
-  set(oneValueArgs POSTFIX)
-  set(multiValueArgs PARAM_LIST IS_LIST)
-  cmake_parse_arguments(parser "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-
-  foreach(param ${parser_PARAM_LIST})
+  # TODO: check for '\n' in values, which is not allowed
+  foreach(param ${ARGN})
     if(NOT ${PROJECT_NAME} STREQUAL ${CMAKE_PROJECT_NAME})
       # Adding test from an IP
       # parameter not defined in current scope, check if defined in IP instantiation
       list(FIND _IP_ARGN ${param} param_index)
       if(param_index GREATER -1)
         foreach(ent ${_IP_ARGN})
-          list(FIND parser_PARAM_LIST ${ent} ent_index)
+          list(FIND ARGN ${ent} ent_index)
           if(ent_index GREATER -1)
             if(ent STREQUAL param)
               set(${param} "")
@@ -203,11 +198,10 @@ function(configure_parameters)
       endif()
     endif()
   endforeach()
-
-  configure_file(${PROJECT_NAME}_${parser_POSTFIX}.in ${PROJECT_NAME}_${parser_POSTFIX})
 endfunction()
 
 macro(hdl_include_directories)
+  # TODO: convert paths to absolute
   get_property(hdl_inc_dirs GLOBAL PROPERTY HDL_INCLUDE_DIRECTORIES)
   list(APPEND hdl_inc_dirs ${ARGN})
   set_property(GLOBAL PROPERTY HDL_INCLUDE_DIRECTORIES ${hdl_inc_dirs})
