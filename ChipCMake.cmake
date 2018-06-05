@@ -2,6 +2,7 @@ if(__ChipCMake_INCLUDED)
   return()
 endif()
 set(__ChipCMake_INCLUDED TRUE)
+set(ChipCMake_DIR ${CMAKE_CURRENT_LIST_DIR})
 
 include(CMakeParseArguments)
 
@@ -32,8 +33,8 @@ define_property(GLOBAL
   )
 set_property(GLOBAL PROPERTY IP_LIST "")
 set_property(GLOBAL PROPERTY TESTBENCH_LIST "")
-set_property(GLOBAL PROPERTY SYNTHESIS_LIST "BAZ")
-set_property(GLOBAL PROPERTY IMPLEMENT_LIST "FOO;BAR")
+set_property(GLOBAL PROPERTY SYNTHESIS_LIST "")
+set_property(GLOBAL PROPERTY IMPLEMENT_LIST "")
 set_property(GLOBAL PROPERTY IP_DIRECTORIES "")
 
 function(ip_directories)
@@ -70,17 +71,6 @@ function(add_ip _IP_NAME)
 
   message("Adding IP: ${_IP_NAME}")
 
-  # set(param_name "")
-  # foreach(param_entry ${ARGN})
-  #   if(NOT param_name)
-  #     set(param_name ${param_entry})
-  #   else()
-  #     set(param_value ${param_entry})
-  #     set(${param_name} ${param_value})
-  #     message("IP ${_IP_NAME} parameter ${param_name} = ${param_value} (inherit from ${PROJECT_NAME})")
-  #     set(param_name "")
-  #   endif()
-  # endforeach()
   set(_IP_ARGN ${ARGN})
   message("IP ${_IP_NAME} instantiated by ${PROJECT_NAME}")
   add_subdirectory(${${_IP_NAME}_DIR} ${CMAKE_CURRENT_BINARY_DIR}/ip/${_IP_NAME})
@@ -110,12 +100,16 @@ function(specify_design)
     set_property(GLOBAL PROPERTY IP_LIST ${ip_list})
 
     set_property(GLOBAL PROPERTY ${IP_NAME}_IP_SOURCES "${parser_SOURCES}")
+    if(NOT parser_NO_SYNTH)
+      set_property(GLOBAL PROPERTY ${IP_NAME}_IP_SOURCES_SYNTH "${parser_SOURCES}")
+    endif()
     set_property(GLOBAL PROPERTY ${IP_NAME}_IP_NO_SYNTH ${parser_NO_SYNTH})
 
   endif()
 endfunction()
 
-function(add_ip_sources _IP_NAME)
+# TODO: try using specify_design() instead
+function(DONTUSE_add_ip_sources _IP_NAME _SIM_SRC _SYNTH_SRC _SYN_DB)
   get_property(ip_list GLOBAL PROPERTY IP_LIST)
   list(FIND ip_list ${_IP_NAME} _index)
   if(NOT ${_index} GREATER -1)
@@ -124,8 +118,15 @@ function(add_ip_sources _IP_NAME)
   endif()
 
   get_property(ip_sources GLOBAL PROPERTY ${_IP_NAME}_IP_SOURCES)
-  list(APPEND ip_sources ${ARGN}) # TODO: check if ARGN contains valid contents
-  set_property(GLOBAL PROPERTY ${_IP_NAME}_IP_SOURCES "${ip_sources}")
+  get_property(ip_sources_synth GLOBAL PROPERTY ${_IP_NAME}_IP_SOURCES_SYNTH)
+  get_property(ip_syn_dbs GLOBAL PROPERTY ${_IP_NAME}_IP_SYN_DB)
+  list(APPEND ip_sources ${_SIM_SRC}) # TODO: check if ARGN contains valid contents
+  list(APPEND ip_sources ${_SYNTH_SRC})
+  list(APPEND ip_sources_synth ${_SYNTH_SRC})
+  list(APPEND ip_syn_dbs ${_SYN_DB})
+  set_property(GLOBAL PROPERTY ${_IP_NAME}_IP_SOURCES ${ip_sources})
+  set_property(GLOBAL PROPERTY ${_IP_NAME}_IP_SOURCES_SYNTH ${ip_sources_synth})
+  set_property(GLOBAL PROPERTY ${_IP_NAME}_IP_SYN_DB ${ip_syn_dbs})
 endfunction()
 
 function(add_testbench _TARGET_NAME)
@@ -165,7 +166,66 @@ function(add_testbench _TARGET_NAME)
 
 endfunction()
 
+function(add_synth_target _TARGET_NAME)
+  if(NOT SYNTHESIZER_FOUND)
+    message(FATAL_ERROR "A synthsize tool must be found using find_package() before adding synth target")
+  endif()
+
+  if(NOT ${PROJECT_NAME} STREQUAL ${CMAKE_PROJECT_NAME})
+    # Adding target from an IP, the target will be ignored
+    return()
+  endif()
+
+  get_property(design_is_set GLOBAL PROPERTY DESIGN_SOURCES SET)
+  if(NOT design_is_set)
+    message(FATAL_ERROR "Please specify_design() before adding target")
+  endif()
+
+  get_property(synthesis_list GLOBAL PROPERTY SYNTHESIS_LIST)
+  list(APPEND synthesis_list ${_TARGET_NAME})
+  set_property(GLOBAL PROPERTY SYNTHESIS_LIST ${synthesis_list})
+
+  set(options "")
+  set(oneValueArgs "TOP")
+  set(multiValueArgs "")
+  cmake_parse_arguments(parser "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+  SYNTHESIZER_CB_add_synth_target(${_TARGET_NAME} ${parser_TOP})
+  update_messages()
+
+endfunction()
+
+function(add_impl_target _TARGET_NAME)
+  if(NOT PHY_TOOL_FOUND)
+    message(FATAL_ERROR "A physical implementation tool must be found using find_package() before adding impl target")
+  endif()
+
+  if(NOT ${PROJECT_NAME} STREQUAL ${CMAKE_PROJECT_NAME})
+    # Adding target from an IP, the target will be ignored
+    return()
+  endif()
+
+  get_property(design_is_set GLOBAL PROPERTY DESIGN_SOURCES SET)
+  if(NOT design_is_set)
+    message(FATAL_ERROR "Please specify_design() before adding target")
+  endif()
+
+  get_property(implement_list GLOBAL PROPERTY IMPLEMENT_LIST)
+  list(APPEND implement_list ${_TARGET_NAME})
+  set_property(GLOBAL PROPERTY IMPLEMENT_LIST ${implement_list})
+
+  set(options "")
+  set(oneValueArgs "")
+  set(multiValueArgs "")
+  cmake_parse_arguments(parser "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+  PHY_TOOL_CB_add_impl_target(${_TARGET_NAME})
+  update_messages()
+
+endfunction()
+
 # The purpose of seperating config.cmake file is to not defaulting every parameters
+# TODO: use package instead of macros
 function(configure_parameters)
   # TODO: check for '\n' in values, which is not allowed
   foreach(param ${ARGN})
@@ -246,6 +306,14 @@ endmacro()
 
 add_custom_target(c2mk_pre_simulation
   COMMENT  "Executing pre-simulation tasks"
+)
+
+add_custom_target(c2mk_pre_synthesis
+  COMMENT  "Executing pre-synthesis tasks"
+)
+
+add_custom_target(c2mk_pre_implement
+  COMMENT  "Executing pre-implement tasks"
 )
 
 update_messages()
