@@ -24,7 +24,7 @@ An EDA framework for pre-silicon/FPGA projects based on cmake and SystemVerilog.
 
 ## Files
 Typical directory structure for a project named `<PROJECT_NAME>`:
-```
+```text
 <PROJECT_ROOT>/
 ├── ip/  
 │   ├── <SOME_IP>/  
@@ -196,7 +196,7 @@ make rule # or simply run 'make'
 ```
    - The output may looks like:
 
-```
+```text
 Scanning dependencies of target rule
 [100%] Print available options
 === Available ChipCMake Rules ===
@@ -221,7 +221,7 @@ ChipCMake framework restricts all of the parameters being derived from the top-d
 In addition, the "call trace" of such parameter derivation is also logged to the console.
 
 An example ChipCMake output configuration is shown below:
-```
+```text
 loading initial cache file ../config.cmake
 ChipCMake module initialized
 Adding IP: axis_line_buffer
@@ -266,7 +266,7 @@ This rule is implemented in the `memory_gen` package.
 ### Design Compiler
 With the above setting (in the Usage section), run `make my_synth` after ChipCMake configuration starts DC.
 Sample output:
-```
+```text
 $ make my_synth
 [ 14%] Built target memory_gen_synth_mem_wc
 [ 28%] Built target memory_gen_synth_mem_cm
@@ -308,7 +308,7 @@ dc_shell>
 The only difference between starting DC with `dc_shell` is that Flowman (stands for FlowManager, a ChipCMake utility) tcl script is initialized.
 The flowman manages the filelist, file types, include directories and library etc. for you.
 To read the design, simply:
-```
+```text
 dc_shell> flowman_input
 ```
 and the remaining is similar to the traditional flow (e.g. constraining the design, compile, reading reports...).
