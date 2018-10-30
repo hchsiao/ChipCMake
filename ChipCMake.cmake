@@ -269,11 +269,23 @@ endmacro()
 
 macro(update_messages)
   file(WRITE "${CMAKE_BINARY_DIR}/target_list.txt" "")
+  file(WRITE "${CMAKE_BINARY_DIR}/synth_list.txt" "")
   # construct help message
   set(HELP_MSG "=== ChipCMake Help ===\\n"
                "\\n"
                "TODO\\n"
                )
+
+  # construct debug message
+  get_property(design_srcs GLOBAL PROPERTY DESIGN_SOURCES)
+  set(synth_sources "")
+  get_property(ip_list GLOBAL PROPERTY IP_LIST)
+  foreach(ip ${ip_list})
+    get_property(ip_srcs GLOBAL PROPERTY ${ip}_IP_SOURCES_SYNTH)
+    list(APPEND synth_sources ${ip_srcs})
+  endforeach()
+  list(APPEND synth_sources ${design_srcs})
+  file(APPEND "${CMAKE_BINARY_DIR}/synth_list.txt" "${synth_sources}")
 
   # construct rule message
   set(RULE_MSG_HEAD "=== Available ChipCMake Rules ===\\n"
@@ -300,6 +312,7 @@ macro(update_messages)
                     "-General:\\n"
                     "  -help (look for help)\\n"
                     "  -rule (display this message)\\n"
+                    "  -sv_flist (generate filelist, format: SystemVerilog include)\\n"
                     "\\n"
                     "================================")
 endmacro()
@@ -326,6 +339,18 @@ add_custom_target(rule ALL VERBATIM
   COMMAND cat ${CMAKE_BINARY_DIR}/target_list.txt
   COMMAND echo -e ${RULE_MSG_TAIL}
   COMMENT  "Print available options"
+)
+add_custom_target(debug VERBATIM
+  COMMAND cat ${CMAKE_BINARY_DIR}/synth_list.txt
+  COMMENT  "Print debug message"
+)
+add_custom_command(OUTPUT all.sv
+  COMMAND bash ${ChipCMake_DIR}/gen_sv_flist.sh
+  COMMENT "Generating all.sv"
+  )
+add_custom_target(sv_flist VERBATIM
+  COMMENT  "Generate filelist in SV format"
+  DEPENDS all.sv
 )
 
 message("ChipCMake module initialized")
