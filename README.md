@@ -62,6 +62,10 @@ Templates for header files with hard-coded parameters (i.e. configurations). Chi
 ## Installation
 Make sure `ChipCMake.cmake` can be found by cmake `include()`, see the [cmake](https://cmake.org/cmake/help/v3.0/command/include.html) document.
 
+### Hardcoded stuff
+The following files (with wildcard) should be modified according to tool installation settings in the underlying workstation
+ - Find\*.cmake
+
 ## Usage
 ### Project creation
  - Create a `CMakeLists.txt` as a usual cmake project.
