@@ -13,10 +13,10 @@ An EDA framework for pre-silicon/FPGA projects based on cmake and SystemVerilog.
 - Automate various repetitive (and error-prone) stuff in the traditional flow
 
 ### Role
-- Package (a.k.a. IP) manage system
+- Package (a.k.a. IP) management system
   - take advantage from the git submodule mechanism to manage sub-designs, each project can point its IP to any branch and version
   - SystemVerilog package as namespace
-  - parameters are propergated from
+  - parameters are propergated from the parent design (for each instantiation in the cmake script)
 - Build system
   - pre-processing, IP configuration, run synthesis, run P&R
 - Unit testing (a.k.a. functional verification) framework
@@ -224,7 +224,7 @@ One of the common bug source is that the parameters are configured in-correctly.
 ChipCMake framework restricts all of the parameters being derived from the top-design `config.cmake` file, in order to minimize the risk of mis-match.
 In addition, the "call trace" of such parameter derivation is also logged to the console.
 
-An example ChipCMake output configuration is shown below:
+An example ChipCMake initialization output in the comsole is shown below:
 ```text
 loading initial cache file ../config.cmake
 ChipCMake module initialized
@@ -261,7 +261,7 @@ IP axis_image_vip parameter TIMEOUT_CYCLE = 512
 -- Build files have been written to: /home/ldap-users/hchsiao/devel/obj_detect/ip/axis_obj_detect/impl
 ```
 
-Another feature may be useful is that the derivation may contain complex logic (using cmake scripts).
+Another feature may be useful is that the derivation may contain complex routine (implemented in cmake scripts).
 In the above call trace, an SRAM size `2945` is mapped to `3008` due to the memory compiler constraint (must be multiple of 4\*MUX or somthing alike).
 This rule is implemented in the `memory_gen` package.
 
