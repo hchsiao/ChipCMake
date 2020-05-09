@@ -1,6 +1,10 @@
 # ChipCMake
 An EDA framework for pre-silicon/FPGA projects based on cmake and SystemVerilog.
 
+## Instances of Usage
+- [memory_gen](https://github.com/hchsiao/memory_gen): Memory generator incooperating with ChipCMake framework.
+- [axis_image_vip](https://github.com/hchsiao/axis_image_vip): Image processing test-bench to supply stimulus for simulation, and recieves the result.
+
 ## Design goals
 ### Features
 - Vendor-independent
